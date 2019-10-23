@@ -1,0 +1,20 @@
+include::config.adoc[]
+=== Getting Started
+==== Build setup
+To use ePA Service Localization library in a project, you need just to include following dependency:
+
+.Gradle dependency settings to use ePA Service Localization library
+[source, groovy, subs="attributes+"]
+dependencies {
+    implementation group: 'de.gematik.ti.fdv', name: 'epa.service.localization', version: '{version_esl}'
+}
+
+.Maven dependency settings to use ePA Service Localization library
+[source, xml, subs="attributes+"]
+<dependencies>
+    <dependency>
+        <groupId>de.gematik.ti.fdv</groupId>
+        <artifactId>epa.service.localization</artifactId>
+        <version>{version_epa_service_localization}</version>
+    </dependency>
+</dependencies>

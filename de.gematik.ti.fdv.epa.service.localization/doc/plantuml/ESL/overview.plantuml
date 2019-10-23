@@ -1,0 +1,45 @@
+@startuml
+
+package de.gematik.ti.fdv.epa.service.localization {
+    class GatewayModulePathType {
+        - path : String
+        - ttl : long
+        - validUntil : Date
+        + GatewayModulePathType()
+        + getValidUntil()
+        + getPath()
+    }
+  }
+
+
+  package de.gematik.ti.fdv.epa.service.localization {
+    class ServiceLocator {
+        {static} - LOG : Logger
+        {static} - HTTPS : String
+        {static} - MAX_LOOKUP_PER_MINUTE : int
+        {static} - ONE_MINUTE_MILLIS : long
+        - fqdn : String
+        - running : boolean
+        - error : String
+        - records : Record[]
+        - lookupFailureCount : int
+        - lookupFailureDate : Date
+        - lookupStatus : LookupStatus
+        - dnsTxtRecordValues : Map<String, GatewayModulePathType>
+        + ServiceLocator()
+        + lookup()
+        - conditionalLookup()
+        + endpointURLForInterface()
+        - checkLookupFailureTimeRange()
+        - fillDnsTxtRecordValues()
+        - fillModuleList()
+        - checkTxtVersion()
+        - handleLookupFailure()
+        + getLookupStatus()
+        + getHomeCommunityID()
+        - handleTTL()
+    }
+  }
+
+  ServiceLocator -up-|> de.gematik.ti.fdv.epa.service.localization.spi.IServiceLocalizer
+@enduml

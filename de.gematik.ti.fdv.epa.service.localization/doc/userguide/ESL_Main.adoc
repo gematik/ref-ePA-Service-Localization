@@ -1,0 +1,5 @@
+include::config.adoc[]
+== ePA Service Localization
+include::ESL_Introduction.adoc[]
+include::ESL_Structure.adoc[]
+include::ESL_GettingStarted.adoc[]
