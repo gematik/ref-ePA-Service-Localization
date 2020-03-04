@@ -1,6 +1,6 @@
 include::config.adoc[]
-=== Getting Started
-==== Build setup
+== Getting Started
+=== Build setup
 To use ePA Service Localization library in a project, you need just to include following dependency:
 
 .Gradle dependency settings to use ePA Service Localization library
@@ -15,6 +15,6 @@ dependencies {
     <dependency>
         <groupId>de.gematik.ti.fdv</groupId>
         <artifactId>epa.service.localization</artifactId>
-        <version>{version_epa_service_localization}</version>
+        <version>1.0.2</version>
     </dependency>
 </dependencies>

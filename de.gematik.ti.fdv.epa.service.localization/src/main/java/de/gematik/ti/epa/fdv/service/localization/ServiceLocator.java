@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 gematik - Gesellschaft für Telematikanwendungen der Gesundheitskarte mbH
+ * Copyright (c) 2020 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gematik.ti.fdv.epa.service.localization;
+package de.gematik.ti.epa.fdv.service.localization;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
-import de.gematik.ti.fdv.epa.service.localization.api.LookupStatus;
-import de.gematik.ti.fdv.epa.service.localization.api.ServiceInterfaceName;
-import de.gematik.ti.fdv.epa.service.localization.spi.IServiceLocalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.Record;
-import org.xbill.DNS.TXTRecord;
-import org.xbill.DNS.TextParseException;
-import org.xbill.DNS.Type;
+import org.xbill.DNS.*;
+
+import de.gematik.ti.epa.fdv.service.localization.api.LookupStatus;
+import de.gematik.ti.epa.fdv.service.localization.api.ServiceInterfaceName;
+import de.gematik.ti.epa.fdv.service.localization.exceptions.ServiceLocatorException;
+import de.gematik.ti.epa.fdv.service.localization.spi.IServiceLocalizer;
 
 /**
  * include::{userguide}/ESL_Structure.adoc[tag=ServiceLocator]
@@ -43,19 +37,10 @@ public final class ServiceLocator implements IServiceLocalizer {
     private static final Logger LOG = LoggerFactory.getLogger(ServiceLocator.class);
     private static final String SCHEME = "https://";
     private static final int PORT = 443;
-    private static volatile ServiceLocator instance;
     private String fqdn;
     private boolean running = false;
-    private Record[] records;
     private LookupStatus lookupStatus = LookupStatus.NOT_STARTED;
     private final Map<String, GatewayModulePathType> dnsTxtRecordValues = new HashMap();
-
-    /**
-     * Constructor
-     */
-    public ServiceLocator() {
-
-    }
 
     /**
      * start a new DNS lookup, e.g. if previous one ended erroneously
@@ -63,11 +48,11 @@ public final class ServiceLocator implements IServiceLocalizer {
      */
     @Override
     public void lookup(final String fqdn, final Consumer<LookupStatus> callback) {
-        if(running) {
+        Record[] records;
+        if (running) {
             return;
         }
         running = true;
-        records = null;
         dnsTxtRecordValues.clear();
         this.fqdn = fqdn;
         Lookup lookup;
@@ -76,9 +61,12 @@ public final class ServiceLocator implements IServiceLocalizer {
             records = lookup.run();
         } catch (TextParseException e) {
             lookupStatus = LookupStatus.ERROR;
-         }
+            throw new RuntimeException(e);
+        }
         if (records != null) {
             fillDnsTxtRecordValues(records);
+        } else {
+            lookupStatus = LookupStatus.MISSING_TXT_RECORD;
         }
         running = false;
         callback.accept(lookupStatus);
@@ -97,7 +85,12 @@ public final class ServiceLocator implements IServiceLocalizer {
 
             String path = dnsTxtRecordValues.get(serviceInterfaceName.getModuleName()).getPath();
             try {
-                URL url = new URL(SCHEME + fqdn + ":" + PORT + path + "/" + serviceInterfaceName.getServiceLocatorName());
+                URL url;
+                if(serviceInterfaceName.getServiceLocatorName().length() > 0) {
+                    url = new URL(SCHEME + fqdn + ":" + PORT + path + "/" + serviceInterfaceName.getServiceLocatorName());
+                } else {
+                    url = new URL(SCHEME + fqdn + ":" + PORT + path);
+                }
                 LOG.debug("endpointURLForInterface for Interface " + serviceInterfaceName.getServiceLocatorName() + ": " + url);
                 return url;
             } catch (MalformedURLException e) {
@@ -108,7 +101,6 @@ public final class ServiceLocator implements IServiceLocalizer {
     }
 
     void fillDnsTxtRecordValues(Record[] records) {
-        lookupStatus = LookupStatus.SUCCESS;
         for (Record record : records) {
             String rData = record.rdataToString().replaceAll("\"", "");
             List<String> rDataTokens = Arrays.asList(rData.split("\\s+"));
@@ -116,7 +108,7 @@ public final class ServiceLocator implements IServiceLocalizer {
             TXTRecord txtRecord = new TXTRecord(record.getName(), record.getDClass(), record.getTTL(), rDataTokens);
             List<String> recordStrings = txtRecord.getStrings();
 
-            if (recordStrings != null && recordStrings.size() > 0) {
+            if (recordStrings != null && !recordStrings.isEmpty()) {
                 for (String string : recordStrings) {
                     if (string.contains("=")) {
                         String[] splitToken = string.trim().split("=", 2);
@@ -124,6 +116,11 @@ public final class ServiceLocator implements IServiceLocalizer {
                     }
                 }
             }
+        }
+        if (dnsTxtRecordValues.size() > 0) {
+            lookupStatus = LookupStatus.SUCCESS;
+        } else {
+            lookupStatus = LookupStatus.MISSING_TXT_RECORD;
         }
     }
 
@@ -143,7 +140,7 @@ public final class ServiceLocator implements IServiceLocalizer {
 
     private void checkTxtVersion(final String version) {
         if (!"1".equals(version)) {
-            throw new RuntimeException("wrong txtVersion");
+            throw new ServiceLocatorException("Wrong txtVersion in DNS Response found.");
         }
     }
 
@@ -164,7 +161,8 @@ public final class ServiceLocator implements IServiceLocalizer {
      * Returns home community (OID, which the file system provider has requested from DIMDI)
      * @return home community ID
      */
-    public String getHomeCommunityID() {
+    @Override
+    public String getHomeCommunityId() {
         boolean isValid = handleTTL("hcid");
         if (isValid) {
             return dnsTxtRecordValues.get("hcid").getPath();
@@ -175,6 +173,6 @@ public final class ServiceLocator implements IServiceLocalizer {
 
     private boolean handleTTL(final String txtRecordName) {
         Date validUntil = dnsTxtRecordValues.get(txtRecordName).getValidUntil();
-        return validUntil.getTime() >= new Date().getTime();
+        return validUntil.getTime() >= new Date(System.currentTimeMillis()).getTime();
     }
 }

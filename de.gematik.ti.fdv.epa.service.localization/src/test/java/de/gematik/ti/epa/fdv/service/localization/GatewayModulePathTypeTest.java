@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 gematik - Gesellschaft für Telematikanwendungen der Gesundheitskarte mbH
+ * Copyright (c) 2020 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gematik.ti.fdv.epa.service.localization;
+package de.gematik.ti.epa.fdv.service.localization;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,12 +27,14 @@ public class GatewayModulePathTypeTest {
 
     @Test
     public void testPathAndValidUntil() {
+        long currentPlusTTL = System.currentTimeMillis() + 1000;
         GatewayModulePathType gatewayModulePathType = new GatewayModulePathType("/avzd", 1000);
         Assert.assertEquals("/avzd", gatewayModulePathType.getPath());
-        Assert.assertEquals(new Date(1 + System.currentTimeMillis()), gatewayModulePathType.getValidUntil());
-        gatewayModulePathType = new GatewayModulePathType("/avzd", -1000);
-        Assert.assertEquals(new Date(-1 + System.currentTimeMillis()), gatewayModulePathType.getValidUntil());
+        Assert.assertTrue( new Date (currentPlusTTL).getTime() <= gatewayModulePathType.getValidUntil().getTime());
+        currentPlusTTL = System.currentTimeMillis();
         gatewayModulePathType = new GatewayModulePathType("/avzd", 0);
-        Assert.assertEquals(new Date(System.currentTimeMillis()), gatewayModulePathType.getValidUntil());
+        Assert.assertTrue( new Date (currentPlusTTL).getTime() <= gatewayModulePathType.getValidUntil().getTime());
+        gatewayModulePathType = new GatewayModulePathType("/avzd", -1000);
+        Assert.assertTrue( new Date (currentPlusTTL).getTime() >= gatewayModulePathType.getValidUntil().getTime());
     }
 }

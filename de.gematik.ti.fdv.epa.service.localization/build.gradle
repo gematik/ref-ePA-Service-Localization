@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 gematik - Gesellschaft für Telematikanwendungen der Gesundheitskarte mbH
+ * Copyright (c) 2020 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 buildscript {
     dependencies {
-        classpath "de.gematik:gematik-parent-plugin:1.0.1"
-        classpath "de.gematik:documentation-plugin:1.0.2"
+        classpath "de.gematik:gematik-parent-plugin:1.2.1"
+        classpath "de.gematik:documentation-plugin:1.1.2"
     }
 }
 
 apply plugin: "de.gematik.parent"
+apply plugin: "de.gematik.publish"
 apply plugin: "de.gematik.asciidoctor"
 apply plugin: "de.gematik.javadoc"
+apply plugin: 'jacoco'
 
-group = 'de.gematik.ti.fdv'
+group = 'de.gematik.ti.epa'
+
+gematikDocumentation {
+    projectShortcut = "ESL"
+    documentVersionReference = "version_epa_service_localization"
+}
+
+gematikPublish {
+    name = "ePA-Service-Localization"
+    description = "ePa-Service-Localization library provides functionality start a new DNS lookup, e.g. if previous one ended erroneously to get the " +
+            "endpoint URL for a given interface."
+    gitHubProjectName = "ref-ePA-Service-Localization"
+}
+
+jacoco {
+    toolVersion = "0.8.4"
+}
 
 description = """ePA Service Localization"""
 
@@ -36,49 +53,36 @@ tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
-sourceSets {
-    test {
-        java.srcDirs = ['src/test/java']
-        resources.srcDirs = ['src/test/resources']
-        runtimeClasspath = project.sourceSets.main.compileClasspath +
-                project.sourceSets.test.compileClasspath +
-                fileTree("${buildDir}/resources/test") + fileTree("${buildDir}/resources/main") + fileTree("${buildDir}") +
-                project.sourceSets.test.output + project.sourceSets.main.output
-    }
-}
-
 dependencies {
+
+    implementation group: 'de.gematik.ti.epa', name: 'fdv.service.localization.api', version: '1.0.2'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    implementation group: 'dnsjava', name: 'dnsjava', version: '2.1.9'
 
     testImplementation group: 'junit', name: 'junit', version: '4.12'
     testImplementation group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
     testImplementation group: 'org.greenrobot', name: 'eventbus', version: '3.1.1'
-    testImplementation group: 'com.github.tony19', name: 'logback-android', version: '1.3.0-3'
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.0.0'
-    
 
     testImplementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.8.1'
     testImplementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.8.1'
 
-    implementation group: 'de.gematik.ti.fdv', name: 'epa.service.localization.api', version: '1.0.1'
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
-
-    implementation group: 'dnsjava', name: 'dnsjava', version: '2.1.9'
 }
 
-gematikDocumentation {
-    projectShortcut = "ESL"
-}
+
 
 task sourceJar(type: Jar) {
     archiveClassifier.set("sources")
     from "${project.buildDir}/../src/main/java/"
     include "**/*.java"
 }
+
 task testSourceJar(type: Jar) {
     archiveClassifier.set("test-sources")
     from "${project.buildDir}/../src/test/java/"
     include "**/*.java"
 }
+
 task adocJar(type: Jar) {
     archiveClassifier.set("adoc")
     from "${project.buildDir}/../doc"
@@ -86,6 +90,7 @@ task adocJar(type: Jar) {
     exclude "**/generated/**/*.*"
 
 }
+
 task javadocJar(type: Jar) {
     archiveClassifier.set("javadoc")
     from "${project.buildDir}/docs/javadoc/"
@@ -97,29 +102,4 @@ artifacts {
     archives testSourceJar
     archives adocJar
     archives javadocJar
-}
-
-project.publishing.publications {
-    sourceJar(MavenPublication) {
-        from components.java
-        artifact tasks.sourceJar
-    }
-    adocJar(MavenPublication) {
-        from components.java
-        artifact tasks.adocJar
-    }
-    testSourceJar(MavenPublication) {
-        from components.java
-        artifact tasks.testSourceJar
-    }
-    pubJavadoc(MavenPublication) {
-        from components.java
-        artifact tasks.javadocJar
-    }
-}
-test {
-    //we want display the following test events
-    testLogging {
-        events "PASSED", "STARTED", "FAILED", "SKIPPED"
-    }
 }

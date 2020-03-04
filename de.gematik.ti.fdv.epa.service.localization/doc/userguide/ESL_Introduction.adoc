@@ -1,5 +1,8 @@
 ifndef::javadoc[]
 include::config.adoc[]
+
+== Introduction
+
 endif::javadoc[]
 
-This part describes the ePA Service Localization functionalities and structure.
+This part describes the usage of ePA Service Localization in your application.

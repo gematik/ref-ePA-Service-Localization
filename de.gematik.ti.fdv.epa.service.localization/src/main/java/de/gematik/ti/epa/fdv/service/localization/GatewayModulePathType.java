@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 gematik - Gesellschaft für Telematikanwendungen der Gesundheitskarte mbH
+ * Copyright (c) 2020 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.gematik.ti.fdv.epa.service.localization;
+package de.gematik.ti.epa.fdv.service.localization;
 
 import java.util.Date;
 
@@ -33,7 +33,7 @@ public class GatewayModulePathType {
      */
     public GatewayModulePathType(final String path, final long ttl) {
         this.path = path;
-        validUntil = new Date((ttl / 1000) + System.currentTimeMillis());
+        validUntil = new Date(System.currentTimeMillis() + ttl);
     }
 
     /**

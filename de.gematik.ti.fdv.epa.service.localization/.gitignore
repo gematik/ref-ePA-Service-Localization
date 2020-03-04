@@ -80,8 +80,5 @@ settings.properties
 .externalNativeBuild
 
 gradle/
-doc/images/generated/
-src/**/*.plantuml
-doc/images/*/generated/
-**/generated/
-.asciidoctor/
+doc/images/generated/src/test/**/*.plantuml
+doc/userguide/.asciidoctor

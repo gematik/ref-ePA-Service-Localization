@@ -1,0 +1,50 @@
+@startuml
+
+
+
+  namespace de.gematik.ti.epa.fdv.service.localization {
+    class de.gematik.ti.epa.fdv.service.localization.GatewayModulePathType {
+        - path : String
+        - validUntil : Date
+        + GatewayModulePathType()
+        + getPath()
+        + getValidUntil()
+    }
+  }
+  
+
+  namespace de.gematik.ti.epa.fdv.service.localization {
+    class de.gematik.ti.epa.fdv.service.localization.ServiceLocator {
+        {static} - LOG : Logger
+        {static} - PORT : int
+        {static} - SCHEME : String
+        - dnsTxtRecordValues : Map<String, GatewayModulePathType>
+        - fqdn : String
+        {static} - instance : ServiceLocator
+        - lookupStatus : LookupStatus
+        - records : Record[]
+        - running : boolean
+        + ServiceLocator()
+        + endpointURLForInterface()
+        + getHomeCommunityId()
+        + getLookupStatus()
+        + lookup()
+        ~ fillDnsTxtRecordValues()
+        - checkTxtVersion()
+        - fillModuleList()
+        - handleTTL()
+    }
+  }
+  
+
+  de.gematik.ti.epa.fdv.service.localization.ServiceLocator .up.|> de.gematik.ti.epa.fdv.service.localization.spi.IServiceLocalizer
+
+
+
+
+
+
+
+
+
+@enduml

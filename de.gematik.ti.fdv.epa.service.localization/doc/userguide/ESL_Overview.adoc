@@ -1,20 +1,34 @@
 include::config.adoc[]
 
-=== Structure
-==== Overview
+== Overview
+
+ifndef::useCachePlantuml[]
+
 .ePA Service Localization structure
 [plantuml, esl/generated/overview, png, caption="{classdia-caption} {counter:class}: ", 650]
 ----
 include::{plantumldir}/ESL/overview.plantuml[]
 ----
-==== ServiceLocator
+
+
+endif::useCachePlantuml[]
+ifdef::useCachePlantuml[]
+
+.ePA Service Localization structure
+image::esl/generated/overview.png[caption="{classdia-caption} {counter:class}: "]
+
+{empty} +
+
+endif::useCachePlantuml[]
+
+=== ServiceLocator
 // tag::ServiceLocator[]
 
 The ServiceLocator class implements the IServiceLocalizer interface from ePA service localization api and provides methods to start a new DNS lookup, e.g. if previous one ended erroneously,
 to get the endpoint URL for a given interface name after a successful lookup, the status of service lookup in DNS and the home community (OID, which the file system provider has requested from DIMDI)
 // end::ServiceLocator[]
 
-==== GatewayModulePathType
+=== GatewayModulePathType
 // tag::GatewayModulePathType[]
 
 The GatewayModulePathType object represents the properties (path, time to live, valid until) of an ePA service module.
