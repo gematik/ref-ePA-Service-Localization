@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 gematik GmbH
+ * Copyright (c) 2021 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import de.gematik.ti.epa.fdv.service.localization.api.ServiceInterfaceName;
 public class ServiceLocatorTest {
     private static final String FQDN = "My.test.fqdn";
     private static final String FQDN_ABSOLUTE = "My.test.fqdn.";
-    private static final String RECORD_TXT = "\"txtvers=1\" \"hcid=1.2.276.0.76.3.1.91\" \"authn=/authn\" \"authz=/authz\" \"avzd=/avzd\" \"docv=/docv\" \"ocspf=/ocspf\" \"avzd=/avzd\" \"sgd1=/sgd1\" \"sgd2=/sgd2\"";
+    private static final String RECORD_TXT = "\"txtvers=1\" \"hcid=1.2.276.0.76.3.1.91\" \"authn=/authn/\" \"authz=/authz/\" \"avzd=/avzd/\" \"docv=/docv/\" \"ocspf=/ocspf/\" \"sgd1=/sgd1/\" \"sgd2=/sgd2/\"";
     private static final int TYPE_TXT = 16;
     private Consumer<LookupStatus> callback;
 
@@ -85,9 +85,9 @@ public class ServiceLocatorTest {
         Assert.assertEquals("https://My.test.fqdn:443/avzd/I_Proxy_Directory_Query", proxyDirectoryQueryUrl.toString());
 
         URL sgd1Url = serviceLocator.endpointURLForInterface(ServiceInterfaceName.I_GET_KEY_SGD_1);
-        Assert.assertEquals("https://My.test.fqdn:443/sgd1", sgd1Url.toString());
+        Assert.assertEquals("https://My.test.fqdn:443/sgd1/", sgd1Url.toString());
 
         URL sgd2Url = serviceLocator.endpointURLForInterface(ServiceInterfaceName.I_GET_KEY_SGD_2);
-        Assert.assertEquals("https://My.test.fqdn:443/sgd2", sgd2Url.toString());
+        Assert.assertEquals("https://My.test.fqdn:443/sgd2/", sgd2Url.toString());
     }
 }

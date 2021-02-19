@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 gematik GmbH
+ * Copyright (c) 2021 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,13 @@ public class GatewayModulePathTypeTest {
     @Test
     public void testPathAndValidUntil() {
         long currentPlusTTL = System.currentTimeMillis() + 1000;
-        GatewayModulePathType gatewayModulePathType = new GatewayModulePathType("/avzd", 1000);
-        Assert.assertEquals("/avzd", gatewayModulePathType.getPath());
+        GatewayModulePathType gatewayModulePathType = new GatewayModulePathType("/avzd/", 1000);
+        Assert.assertEquals("/avzd/", gatewayModulePathType.getPath());
         Assert.assertTrue( new Date (currentPlusTTL).getTime() <= gatewayModulePathType.getValidUntil().getTime());
         currentPlusTTL = System.currentTimeMillis();
-        gatewayModulePathType = new GatewayModulePathType("/avzd", 0);
+        gatewayModulePathType = new GatewayModulePathType("/avzd/", 0);
         Assert.assertTrue( new Date (currentPlusTTL).getTime() <= gatewayModulePathType.getValidUntil().getTime());
-        gatewayModulePathType = new GatewayModulePathType("/avzd", -1000);
+        gatewayModulePathType = new GatewayModulePathType("/avzd/", -1000);
         Assert.assertTrue( new Date (currentPlusTTL).getTime() >= gatewayModulePathType.getValidUntil().getTime());
     }
 }

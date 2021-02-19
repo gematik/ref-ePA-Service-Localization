@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 gematik GmbH
+ * Copyright (c) 2021 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ public final class ServiceLocator implements IServiceLocalizer {
             try {
                 URL url;
                 if(serviceInterfaceName.getServiceLocatorName().length() > 0) {
-                    url = new URL(SCHEME + fqdn + ":" + PORT + path + "/" + serviceInterfaceName.getServiceLocatorName());
+                    url = new URL(SCHEME + fqdn + ":" + PORT + path + serviceInterfaceName.getServiceLocatorName());
                 } else {
                     url = new URL(SCHEME + fqdn + ":" + PORT + path);
                 }
