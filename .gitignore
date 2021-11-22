@@ -3,3 +3,9 @@
 */target/
 */.gradle/
 */*.plantuml
+
+githubPublish.jenkinsfile
+release.jenkinsfile
+githubBuild.jenkinsfile
+ciExtern.jenkinsfile
+ci.jenkinsfile

@@ -1,36 +1,40 @@
 /*
  * Copyright (c) 2021 gematik GmbH
  * 
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  * 
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
+ * distributed under the License is distributed on an 'AS IS' BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 buildscript {
     dependencies {
-        classpath "de.gematik:gematik-parent-plugin:1.2.1"
-        classpath "de.gematik:documentation-plugin:1.1.2"
+        classpath "de.gematik:gematik-parent-plugin:1.3.1"
+        classpath "de.gematik:documentation-plugin:1.2.0"
     }
+}
+
+configurations {
+    asciidoclet
 }
 
 apply plugin: "de.gematik.parent"
 apply plugin: "de.gematik.publish"
 apply plugin: "de.gematik.asciidoctor"
 apply plugin: "de.gematik.javadoc"
-apply plugin: 'jacoco'
 
-group = 'de.gematik.ti.epa'
+
+version = file('version.txt').text.trim()
+group = 'de.gematik.ti.fdv'
 
 gematikDocumentation {
     projectShortcut = "ESL"
-    documentVersionReference = "version_epa_service_localization"
 }
 
 gematikPublish {
@@ -41,13 +45,21 @@ gematikPublish {
 }
 
 jacoco {
-    toolVersion = "0.8.4"
+    toolVersion = "0.8.6"
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.destination file("${buildDir}/../../html")
+        xml.destination file("${buildDir}/../../dependency-check-report.xml")
+    }
 }
 
 description = """ePA Service Localization"""
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+java.sourceCompatibility = JavaVersion.VERSION_1_8
+java.targetCompatibility = JavaVersion.VERSION_1_8
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
@@ -73,18 +85,21 @@ dependencies {
 
 task sourceJar(type: Jar) {
     archiveClassifier.set("sources")
+    dependsOn("javadoc")
     from "${project.buildDir}/../src/main/java/"
     include "**/*.java"
 }
 
 task testSourceJar(type: Jar) {
     archiveClassifier.set("test-sources")
+    dependsOn("javadoc")
     from "${project.buildDir}/../src/test/java/"
     include "**/*.java"
 }
 
 task adocJar(type: Jar) {
     archiveClassifier.set("adoc")
+    dependsOn("javadoc")
     from "${project.buildDir}/../doc"
     into "${project.name}"
     exclude "**/generated/**/*.*"
@@ -93,6 +108,7 @@ task adocJar(type: Jar) {
 
 task javadocJar(type: Jar) {
     archiveClassifier.set("javadoc")
+    dependsOn("javadoc")
     from "${project.buildDir}/docs/javadoc/"
     into "${project.name}"
 }

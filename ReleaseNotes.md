@@ -1,3 +1,6 @@
+# Release 1.1.0
+Upgrade Gradle version
+
 # Release 1.0.3
 Fixed tests for gemSpec_Aktensystem_V1.6.0 A_14128-02.
 

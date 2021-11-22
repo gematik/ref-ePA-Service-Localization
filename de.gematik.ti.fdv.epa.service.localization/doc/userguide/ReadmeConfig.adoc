@@ -15,7 +15,7 @@ ifndef::globalConfig[]
 :seqdia-caption: Sequence diagram
 
 :source-highlighter: prettify
-de.gematik.ti.epa.android.fdv.service.localization
+de.gematik.ti.fdv.epa.service.localization
 
 :imagesdir: ../images
 :imagesoutdir: ../images

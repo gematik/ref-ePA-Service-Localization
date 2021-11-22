@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ServiceLocator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">epa.service.localization</a> &gt; <a href="index.source.html" class="el_package">de.gematik.ti.epa.fdv.service.localization</a> &gt; <span class="el_source">ServiceLocator.java</span></div><h1>ServiceLocator.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2021 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package de.gematik.ti.epa.fdv.service.localization;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
+import java.util.function.Consumer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xbill.DNS.*;
+
+import de.gematik.ti.epa.fdv.service.localization.api.LookupStatus;
+import de.gematik.ti.epa.fdv.service.localization.api.ServiceInterfaceName;
+import de.gematik.ti.epa.fdv.service.localization.exceptions.ServiceLocatorException;
+import de.gematik.ti.epa.fdv.service.localization.spi.IServiceLocalizer;
+
+/**
+ * include::{userguide}/ESL_Structure.adoc[tag=ServiceLocator]
+ */
+<span class="fc" id="L23">public final class ServiceLocator implements IServiceLocalizer {</span>
+
+<span class="fc" id="L25">    private static final Logger LOG = LoggerFactory.getLogger(ServiceLocator.class);</span>
+    private static final String SCHEME = &quot;https://&quot;;
+    private static final int PORT = 443;
+    private String fqdn;
+<span class="fc" id="L29">    private boolean running = false;</span>
+<span class="fc" id="L30">    private LookupStatus lookupStatus = LookupStatus.NOT_STARTED;</span>
+<span class="fc" id="L31">    private final Map&lt;String, GatewayModulePathType&gt; dnsTxtRecordValues = new HashMap();</span>
+
+    /**
+     * start a new DNS lookup, e.g. if previous one ended erroneously
+     * @param callback optional Consumer parameter to get callback the lookup status
+     */
+    @Override
+    public void lookup(final String fqdn, final Consumer&lt;LookupStatus&gt; callback) {
+        Record[] records;
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (running) {</span>
+<span class="nc" id="L41">            return;</span>
+        }
+<span class="fc" id="L43">        running = true;</span>
+<span class="fc" id="L44">        dnsTxtRecordValues.clear();</span>
+<span class="fc" id="L45">        this.fqdn = fqdn;</span>
+        Lookup lookup;
+        try {
+<span class="fc" id="L48">            lookup = new Lookup(fqdn, Type.TXT);</span>
+<span class="fc" id="L49">            records = lookup.run();</span>
+<span class="nc" id="L50">        } catch (TextParseException e) {</span>
+<span class="nc" id="L51">            lookupStatus = LookupStatus.ERROR;</span>
+<span class="nc" id="L52">            throw new RuntimeException(e);</span>
+<span class="fc" id="L53">        }</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        if (records != null) {</span>
+<span class="nc" id="L55">            fillDnsTxtRecordValues(records);</span>
+        } else {
+<span class="fc" id="L57">            lookupStatus = LookupStatus.MISSING_TXT_RECORD;</span>
+        }
+<span class="fc" id="L59">        running = false;</span>
+<span class="fc" id="L60">        callback.accept(lookupStatus);</span>
+<span class="fc" id="L61">    }</span>
+
+    /**
+     * After successful lookup, it returns endpointURL for a given interface name
+     *
+     * @param serviceInterfaceName name of the gateway interface where to get the URL for
+     * @return URL of given interface name
+     */
+    @Override
+    public URL endpointURLForInterface(final ServiceInterfaceName serviceInterfaceName) {
+<span class="fc" id="L71">        boolean isValid = handleTTL(serviceInterfaceName.getModuleName());</span>
+<span class="pc bpc" id="L72" title="2 of 4 branches missed.">        if (lookupStatus.equals(LookupStatus.SUCCESS) &amp;&amp; isValid) {</span>
+
+<span class="fc" id="L74">            String path = dnsTxtRecordValues.get(serviceInterfaceName.getModuleName()).getPath();</span>
+            try {
+                URL url;
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                if(serviceInterfaceName.getServiceLocatorName().length() &gt; 0) {</span>
+<span class="fc" id="L78">                    url = new URL(SCHEME + fqdn + &quot;:&quot; + PORT + path + serviceInterfaceName.getServiceLocatorName());</span>
+                } else {
+<span class="fc" id="L80">                    url = new URL(SCHEME + fqdn + &quot;:&quot; + PORT + path);</span>
+                }
+<span class="fc" id="L82">                LOG.debug(&quot;endpointURLForInterface for Interface &quot; + serviceInterfaceName.getServiceLocatorName() + &quot;: &quot; + url);</span>
+<span class="fc" id="L83">                return url;</span>
+<span class="nc" id="L84">            } catch (MalformedURLException e) {</span>
+<span class="nc" id="L85">                LOG.error(&quot;Malformed URL received from module &quot; + path + e.getMessage());</span>
+            }
+        }
+<span class="nc" id="L88">        return null;</span>
+    }
+
+    void fillDnsTxtRecordValues(Record[] records) {
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        for (Record record : records) {</span>
+<span class="fc" id="L93">            String rData = record.rdataToString().replaceAll(&quot;\&quot;&quot;, &quot;&quot;);</span>
+<span class="fc" id="L94">            List&lt;String&gt; rDataTokens = Arrays.asList(rData.split(&quot;\\s+&quot;));</span>
+
+<span class="fc" id="L96">            TXTRecord txtRecord = new TXTRecord(record.getName(), record.getDClass(), record.getTTL(), rDataTokens);</span>
+<span class="fc" id="L97">            List&lt;String&gt; recordStrings = txtRecord.getStrings();</span>
+
+<span class="pc bpc" id="L99" title="2 of 4 branches missed.">            if (recordStrings != null &amp;&amp; !recordStrings.isEmpty()) {</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">                for (String string : recordStrings) {</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">                    if (string.contains(&quot;=&quot;)) {</span>
+<span class="fc" id="L102">                        String[] splitToken = string.trim().split(&quot;=&quot;, 2);</span>
+<span class="fc" id="L103">                        fillModuleList(record, splitToken);</span>
+                    }
+<span class="fc" id="L105">                }</span>
+            }
+        }
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (dnsTxtRecordValues.size() &gt; 0) {</span>
+<span class="fc" id="L109">            lookupStatus = LookupStatus.SUCCESS;</span>
+        } else {
+<span class="nc" id="L111">            lookupStatus = LookupStatus.MISSING_TXT_RECORD;</span>
+        }
+<span class="fc" id="L113">    }</span>
+
+    private void fillModuleList(final Record record, final String[] splitToken) {
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">        if (splitToken.length == 2) {</span>
+<span class="fc" id="L117">            String txtRecordName = splitToken[0];</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">            if (txtRecordName.equals(&quot;txtvers&quot;)) {</span>
+<span class="fc" id="L119">                checkTxtVersion(splitToken[1]);</span>
+            } else {
+<span class="fc" id="L121">                GatewayModulePathType gatewayModulePathType = new GatewayModulePathType(splitToken[1], record.getTTL());</span>
+<span class="fc" id="L122">                dnsTxtRecordValues.put(splitToken[0], gatewayModulePathType);</span>
+<span class="fc" id="L123">                LOG.debug(&quot;TxtRecordName: &quot; + txtRecordName + &quot; gatewayModulePath: &quot; + gatewayModulePathType.getPath()</span>
+<span class="fc" id="L124">                        + &quot; valid until: &quot; + gatewayModulePathType.getValidUntil().toString());</span>
+            }
+        }
+<span class="fc" id="L127">    }</span>
+
+    private void checkTxtVersion(final String version) {
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">        if (!&quot;1&quot;.equals(version)) {</span>
+<span class="nc" id="L131">            throw new ServiceLocatorException(&quot;Wrong txtVersion in DNS Response found.&quot;);</span>
+        }
+<span class="fc" id="L133">    }</span>
+
+    /**
+     * Returns the status of service lookup in DNS
+     * @return status of service lookup in DNS
+     */
+    @Override
+    public LookupStatus getLookupStatus() {
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        if (!running) {</span>
+<span class="fc" id="L142">            return lookupStatus;</span>
+        } else {
+<span class="nc" id="L144">            return LookupStatus.IN_PROGRESS;</span>
+        }
+    }
+
+    /**
+     * Returns home community (OID, which the file system provider has requested from DIMDI)
+     * @return home community ID
+     */
+    @Override
+    public String getHomeCommunityId() {
+<span class="fc" id="L154">        boolean isValid = handleTTL(&quot;hcid&quot;);</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        if (isValid) {</span>
+<span class="fc" id="L156">            return dnsTxtRecordValues.get(&quot;hcid&quot;).getPath();</span>
+        } else {
+<span class="nc" id="L158">            return null;</span>
+        }
+    }
+
+    private boolean handleTTL(final String txtRecordName) {
+<span class="fc" id="L163">        Date validUntil = dnsTxtRecordValues.get(txtRecordName).getValidUntil();</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        return validUntil.getTime() &gt;= new Date(System.currentTimeMillis()).getTime();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>
